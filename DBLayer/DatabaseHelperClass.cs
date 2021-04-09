@@ -308,6 +308,8 @@ namespace SerialSample.DBLayer
         #endregion
 
         #region [DeviceEntity]
+        private ReaderWriterLockSlim _readerWriterLock = new ReaderWriterLockSlim();
+
         public void InsertDevice(DeviceEntity obj)
         {
             try
@@ -347,11 +349,21 @@ namespace SerialSample.DBLayer
         {
             try
             {
-                using (SQLite.Net.SQLiteConnection conn = new SQLite.Net.SQLiteConnection(new SQLite.Net.Platform.WinRT.SQLitePlatformWinRT(), App.DB_PATH))
+                List<DeviceEntity> selectDataTable = null;
+                try
                 {
-                    var myCollection = conn.Table<DeviceEntity>().ToList<DeviceEntity>();
-                    return myCollection;
+                    _readerWriterLock.EnterReadLock();
+                    using (SQLite.Net.SQLiteConnection conn = new SQLite.Net.SQLiteConnection(new SQLite.Net.Platform.WinRT.SQLitePlatformWinRT(), App.DB_PATH))
+                    {
+                        selectDataTable = conn.Table<DeviceEntity>().ToList<DeviceEntity>();                        
+                    }
                 }
+                finally
+                {
+                    _readerWriterLock.ExitReadLock();
+                }
+                return selectDataTable;
+                
             }
             catch (Exception ex)
             {
@@ -383,20 +395,43 @@ namespace SerialSample.DBLayer
         {
             try
             {
-
-                using (SQLite.Net.SQLiteConnection conn = new SQLite.Net.SQLiteConnection(new SQLite.Net.Platform.WinRT.SQLitePlatformWinRT(), App.DB_PATH))
+                
+                bool isbreaked = false;
+                try
                 {
-
-                    var existingconact = conn.Query<DeviceEntity>("select * from DeviceEntity where ID =" + Obj.ID).FirstOrDefault();
-                    if (existingconact != null)
+                    _readerWriterLock.EnterWriteLock();
+                    if (_readerWriterLock.WaitingReadCount > 0)
                     {
-                        conn.RunInTransaction(() =>
-                        {
-                            conn.Update(Obj);
-                        });
+                        isbreaked = true;
                     }
+                    else
+                    {
+                        using (SQLite.Net.SQLiteConnection conn = new SQLite.Net.SQLiteConnection(new SQLite.Net.Platform.WinRT.SQLitePlatformWinRT(), App.DB_PATH))
+                        {
 
+                            var existingconact = conn.Query<DeviceEntity>("select * from DeviceEntity where ID =" + Obj.ID).FirstOrDefault();
+                            if (existingconact != null)
+                            {
+                                conn.RunInTransaction(() =>
+                                {
+                                    conn.Update(Obj);
+                                });
+                            }
+
+                        }
+                    }
                 }
+                finally
+                {
+                    _readerWriterLock.ExitWriteLock();
+                }
+
+                if (isbreaked)
+                {
+                    Thread.Sleep(10);
+                    UpdateDevice(Obj);
+                }
+                return;                
             }
             catch (Exception ex)
             {

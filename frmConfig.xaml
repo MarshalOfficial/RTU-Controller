@@ -56,7 +56,7 @@
         <TextBlock HorizontalAlignment="Left" Margin="564,184,0,0" Text="مجتمع" TextWrapping="Wrap" VerticalAlignment="Top" Width="80"/>
         <ComboBox x:Name="cmbCurrentSite" HorizontalAlignment="Left" Margin="293,177,0,0" VerticalAlignment="Top" Width="260"/>
         <TextBlock HorizontalAlignment="Left" Margin="564,225,0,0" Text="آی پی سرور مرکز" TextWrapping="Wrap" VerticalAlignment="Top"/>
-        <TextBox x:Name="tbxSqlIP" HorizontalAlignment="Left" Margin="293,217,0,0" Text="" VerticalAlignment="Top" Width="260"/>
+        <TextBox x:Name="tbxSqlIP" HorizontalAlignment="Left" Text="185.252.28.43" Margin="293,217,0,0"  VerticalAlignment="Top" Width="260"/>
         <Button x:Name="btnSaveSetting" Content="ثبت" HorizontalAlignment="Left" Margin="203,219,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.414,0.263" Width="73" Click="btnSaveSetting_Click"/>
     </Grid>
 </Page>

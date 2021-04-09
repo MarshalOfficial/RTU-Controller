@@ -133,7 +133,10 @@ namespace SerialSample
         /// <summary>
         /// این ترد جهت آپدیت اطلاعات روی داشبورد می باشد
         /// </summary>
-        private Thread DashboardUIThread; 
+        private Thread DashboardUIThread;
+
+        private Thread DeviceBalanceDownloadThread;
+
         /// <summary>
         /// این لیست تردها جهت ریختن درخواست های زماندار توی صف اصلی می باشد
         /// چرا لیست گرفتیم چون درخواست های زماندار با اولویت های مختلفی وجود داره و بستگی داره کاربر سایت چیا تعریف کرده باشه
@@ -265,6 +268,13 @@ namespace SerialSample
                 Name = "upload logs to sql Thread"
             };
             UploadLogThread.Start();
+
+            DeviceBalanceDownloadThread = new Thread(new ThreadStart(DownloadDeviceChargeLog))
+            {
+                IsBackground = true,
+                Name = "get device balance chatge log Thread"
+            };
+            DeviceBalanceDownloadThread.Start();
         }
         private void InitCache()
         {
@@ -849,6 +859,7 @@ namespace SerialSample
         /// </summary>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
+        /// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@MUST REFACTOR AND CLEAN
         private async Task ReadAsync(CancellationToken cancellationToken)
         {
             try
@@ -980,11 +991,16 @@ namespace SerialSample
                         // یا فایر سایته همون درخواستی که کاربر سایت میزنه و جوابشو همون روی سایت میخاد
                         // یا فایر کاربر خوده کنترلر هست که روی فرم همین برنامه درخواستو زده
                         var onlineshot = ShotQueue.Peek();
+                        int _deviceid = 0, _instructionid = 0;
+                        string _value = string.Empty;
+
                         // اگر درخواست کاربر سایت بود یا همون فایر سایت
                         if (onlineshot.InstructionFire != null)
                         {
                             // درآوردن اطلاعات اولیه از آبجکت کش
                             var fire = onlineshot.InstructionFire;
+                            _deviceid = onlineshot.InstructionFire.DeviceID;
+                            _instructionid = onlineshot.InstructionFire.InstructionID;
                             var device = LocalCache.Devices.FirstOrDefault(l => l.ID == fire.DeviceID);
                             var deviceresults = LocalCache.Results.Where(l => l.DeviceType == device.DeviceType).ToList();
                             var items = InString.Split('-');
@@ -1024,6 +1040,7 @@ namespace SerialSample
                                         // جواب از مدل عادی است
                                         fire.ResultID = result.ID;
                                         fire.Value = result.Memo;
+                                        _value = fire.Value;
                                         // اگر سرور وصل باشه جواب درخواست کاربر سایت مستقیم اینزرت میشه روی دیتابیس مرکز
                                         if (Extension.IsSqlServerAvailable(LocalCache.Setting.SQLServerIP))
                                         {
@@ -1108,6 +1125,7 @@ namespace SerialSample
                                                 if (string.IsNullOrWhiteSpace(fire.Value))
                                                 {
                                                     fire.Value = value;
+                                                    _value = fire.Value;
                                                 }
                                                 if (Extension.IsSqlServerAvailable(LocalCache.Setting.SQLServerIP))
                                                 {
@@ -1147,6 +1165,8 @@ namespace SerialSample
                             var device = LocalCache.Devices.FirstOrDefault(l => l.ID == dashitem.DeviceID);
                             var deviceresults = LocalCache.Results.Where(l => l.DeviceType == device.DeviceType).ToList();
                             var dashiteminstruction = LocalCache.Instructions.FirstOrDefault(l => l.ID == dashitem.InstructionID);
+                            _deviceid = dashitem.DeviceID;
+                            _instructionid = dashitem.InstructionID;
                             var items = InString.Split('-');
                             if (items != null && items.Count() > 0)
                             {
@@ -1173,6 +1193,7 @@ namespace SerialSample
                                         // جواب از مدل عادی است
                                         dashitem.ResultID = result.ID;
                                         dashitem.Value = result.Memo;
+                                        _value = dashitem.Value;
                                         dashitem.SaveTime = DateTime.UtcNow;
                                         LocalCache.DashboardLogs.Add(new DashboardLogEntity()
                                         {
@@ -1267,6 +1288,7 @@ namespace SerialSample
                                                 if (string.IsNullOrWhiteSpace(dashitem.Value))
                                                 {
                                                     dashitem.Value = value;
+                                                    _value = dashitem.Value;
                                                 }
 
                                                 dashitem.SaveTime = DateTime.UtcNow;
@@ -1399,6 +1421,8 @@ namespace SerialSample
                             var localfire = onlineshot.LocalFire;
                             var device = LocalCache.Devices.FirstOrDefault(l => l.ID == localfire.DeviceID);
                             var deviceresults = LocalCache.Results.Where(l => l.DeviceType == device.DeviceType).ToList();
+                            _deviceid = localfire.DeviceID;
+                            _instructionid = localfire.InstructionID;
                             var items = InString.Split('-');
                             if (items != null && items.Count() > 0)
                             {
@@ -1425,6 +1449,7 @@ namespace SerialSample
                                         // جواب از مدل عادی است
                                         localfire.ResultID = result.ID;
                                         localfire.Value = result.Memo;
+                                        _value = localfire.Value;
                                         LocalCache.DashboardLogs.Add(new DashboardLogEntity()
                                         {
                                             InstructionID = localfire.InstructionID,
@@ -1508,6 +1533,7 @@ namespace SerialSample
                                                 if (string.IsNullOrWhiteSpace(localfire.Value))
                                                 {
                                                     localfire.Value = value;
+                                                    _value = localfire.Value;
                                                 }
                                                 LocalCache.DashboardLogs.Add(new DashboardLogEntity()
                                                 {
@@ -1569,6 +1595,42 @@ namespace SerialSample
                                 SLOCK = false;
                             }
                         }
+
+
+
+
+                        //todo check if instruction has effect on balance then update balance and make an instruction base on balance if less than zero or above
+                        //همچنین ی جایی برای دانلود اتومات لاگ های مثبت شارژ کنتور باید بیندیشیم
+                        //
+                        if (_deviceid > 0 && _instructionid > 0 && LocalCache.Instructions.FirstOrDefault(a => a.ID == _instructionid).IsEffectOnBalance && decimal.TryParse(_value, out decimal __value))
+                        {
+                            var ins = LocalCache.Instructions.FirstOrDefault(a => a.ID == _instructionid);
+                            var dev = LocalCache.Devices.FirstOrDefault(a => a.ID == _deviceid);
+                            var oldbalance = dev.Balance.ToDecimal();
+                            dev.Balance += (__value * -1);//مقدار دریافتی از کنتور از بالانس کم میشود
+                            localDb.UpdateDevice(dev);
+                            if(oldbalance > 0 && dev.Balance <= 0 && ins.ConnectedDeviceIDNegative.ToInt() > 0 && ins.ConnectedDeviceInstructionIDNegative.ToInt() > 0)
+                            {
+                                //turn it off
+                                ShotQueue.Enqueue(new Shot(new LocalFireEntity()
+                                {
+                                    DeviceID = ins.ConnectedDeviceIDNegative.ToInt(),
+                                    InstructionID = ins.ConnectedDeviceInstructionIDNegative.ToInt(),
+                                    Type = "LocalFire"
+                                }));
+                            }
+                            if (oldbalance <= 0 && dev.Balance > 0 && ins.ConnectedDeviceIDPositive.ToInt() > 0 && ins.ConnectedDeviceInstructionIDPositive.ToInt() > 0)
+                            {
+                                //turn it on
+                                ShotQueue.Enqueue(new Shot(new LocalFireEntity()
+                                {
+                                    DeviceID = ins.ConnectedDeviceIDPositive.ToInt(),
+                                    InstructionID = ins.ConnectedDeviceInstructionIDPositive.ToInt(),
+                                    Type = "LocalFire"
+                                }));
+                            }
+                        }
+                        //
                     }
                 }
             }
@@ -1940,11 +2002,12 @@ namespace SerialSample
                 SlockTimer.Stop();
                 if (ShotQueue != null && ShotQueue.Count > 0)
                 {
-                    var onlineshot = ShotQueue.Peek();
+                    var onlineshot = ShotQueue.Peek();                    
+
                     if (onlineshot.InstructionFire != null)
                     {
                         var fire = onlineshot.InstructionFire;
-                        fire.Value = "Timeout";
+                        fire.Value = "Timeout";                        
                         if (Extension.IsSqlServerAvailable(LocalCache.Setting.SQLServerIP))
                         {
                             sqlDb.UpdateInstructionFireOnServer(onlineshot.InstructionFire.ID, fire.Value, 0);
@@ -1952,7 +2015,7 @@ namespace SerialSample
                     }
                     else if (onlineshot.DashboardItem != null)
                     {
-                        var dash = LocalCache.DashboardItems.FirstOrDefault(l => l.ID == onlineshot.DashboardItem.ID);
+                        var dash = LocalCache.DashboardItems.FirstOrDefault(l => l.ID == onlineshot.DashboardItem.ID);                        
                         dash.Value = "Timeout";
                         dash.SaveTime = DateTime.UtcNow;
                         LocalCache.DashboardItems.Where(usr => usr.ID == dash.ID).Select(usr => { usr.ResultID = 0; usr.Value = dash.Value; usr.SaveTime = dash.SaveTime; return usr; }).ToList();
@@ -1968,7 +2031,7 @@ namespace SerialSample
                         });
                     }
                     else if (onlineshot.LocalFire != null)
-                    {
+                    {                        
                         LocalCache.DashboardLogs.Add(new DashboardLogEntity()
                         {
                             InstructionID = onlineshot.LocalFire.InstructionID,
@@ -1984,6 +2047,7 @@ namespace SerialSample
                             await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => { UpdateLocalFireResultUI("Timeout"); });
                         }
                     }
+                   
                     if (ShotQueue.Count > 0) { ShotQueue.Dequeue(); }
                     SLOCK = false;
                 }
@@ -2161,6 +2225,43 @@ namespace SerialSample
             }
         }
         #endregion
+
+
+        private void DownloadDeviceChargeLog()
+        {   
+            try
+            {
+                while (true)
+                {
+                    if (Extension.IsSqlServerAvailable(LocalCache.Setting.SQLServerIP))
+                    {
+                        var lst = sqlDb.DownloadDeviceChargeValue();
+                        if(lst != null && lst.Count > 0)
+                        {
+                            string deviceids = string.Join(",", lst.Select(item => item.DeviceID).Distinct().ToArray());
+                            foreach (var devid in deviceids.Split(','))
+                            {
+                                var charge = lst.Where(a => a.DeviceID == devid.ToInt()).Sum(a => a.LogValue);
+                                var dev = LocalCache.Devices.FirstOrDefault(a => a.ID == devid.ToInt());
+                                dev.Balance += charge;
+                                localDb.UpdateDevice(dev);
+                            }
+                            foreach (var item in lst)
+                            {
+                                sqlDb.UpdateDeviceChargeValueLog(item.ID);
+                            }
+                        }
+                        
+                        Thread.Sleep(300000);//every 5 minutes
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex); _errorLog.SaveLog(ex);
+                throw ex;
+            }
+        }
 
         private async void ShowError(Exception ex)
         {

@@ -112,7 +112,7 @@ namespace SerialSample.DBLayer
 
         public List<DeviceEntity> DownloadAllDevices()
         {
-            const string GetProductsQuery = @" SELECT [ID],[DeviceType],[LocationID],[RowNo],isnull([Name],''),isnull([Address],''),isnull([ConnectedDeviceID],0) " +
+            const string GetProductsQuery = @" SELECT [ID],[DeviceType],[LocationID],[RowNo],isnull([Name],''),isnull([Address],''),isnull([ConnectedDeviceID],0),isnull([Balance],0) " +
                                              " FROM [dbo].[Devices](nolock) Where IsDeleted=0 ";
 
             var sites = new List<DeviceEntity>();
@@ -139,6 +139,7 @@ namespace SerialSample.DBLayer
                                         Name = reader.GetString(4),
                                         Address = reader.GetString(5),
                                         ConnectedDeviceID = reader.GetInt32(6),
+                                        Balance = reader.GetDecimal(7)
                                     };
                                     sites.Add(site);
                                 }
@@ -208,7 +209,9 @@ namespace SerialSample.DBLayer
                                                        isnull([Data],''),isnull([Formula],''),isnull([ChildInstructionID],0),isnull([UntilMin],0),
                                                        isnull([ChildType],0),isnull(GPIO,0),isnull(GPIOValue,0),isnull([IEEE],0),isnull([UnitName],''),
                                                        isnull([MinValue],0),isnull([MaxValue],0),isnull([SecondFormula],''),isnull(ParentID,0),
-                                                       isnull(FromByte,0),isnull(ToByte,0)
+                                                       isnull(FromByte,0),isnull(ToByte,0),isnull(IsEffectOnBalance,0),
+                                                       isnull(ConnectedDeviceIDPositive,0),isnull(ConnectedDeviceInstructionIDPositive,0),
+                                                       isnull(ConnectedDeviceIDNegative,0),isnull(ConnectedDeviceInstructionIDNegative,0)
                                                FROM [dbo].[Instructions](nolock) Where IsDeleted=0 ";
 
             var sites = new List<InstructionEntity>();
@@ -248,7 +251,12 @@ namespace SerialSample.DBLayer
                                         SecondFormula = reader.GetString(17),
                                         ParentID = reader.GetInt32(18),
                                         FromByte = reader.GetInt32(19),
-                                        ToByte = reader.GetInt32(20)
+                                        ToByte = reader.GetInt32(20),
+                                        IsEffectOnBalance = reader.GetBoolean(21),
+                                        ConnectedDeviceIDPositive = reader.GetInt32(22),
+                                        ConnectedDeviceInstructionIDPositive = reader.GetInt32(23),
+                                        ConnectedDeviceIDNegative = reader.GetInt32(24),
+                                        ConnectedDeviceInstructionIDNegative = reader.GetInt32(25)
                                     };
                                     sites.Add(site);
                                 }
@@ -668,6 +676,78 @@ namespace SerialSample.DBLayer
                 if (string.IsNullOrWhiteSpace(localip)) return;
                 if (siteid <= 0) return;
                 string GetProductsQuery = string.Format(@" update [dbo].[Ras] set [HardUpdate]=0 Where [SiteID]={0} and [IP] like '{1}%' ", siteid, localip);
+                using (var conn = new SqlConnection(cs))
+                {
+                    conn.Open();
+                    if (conn.State == System.Data.ConnectionState.Open)
+                    {
+                        using (SqlCommand cmd = conn.CreateCommand())
+                        {
+                            cmd.CommandText = GetProductsQuery;
+                            cmd.ExecuteNonQuery();
+                        }
+                        conn.Close();
+                    }
+                }
+            }
+            catch (Exception eSql)
+            {
+                throw eSql;
+            }
+        }
+
+
+
+        public List<DeviceBalanceLogEntity> DownloadDeviceChargeValue()   
+        {
+            const string GetProductsQuery = @" SELECT [ID],[DeviceID],[LogValue] FROM [dbo].[DeviceBalanceLog](nolock) where IsDownload = 0 and isnull(LogValue,0) > 0 ";
+
+            var sites = new List<DeviceBalanceLogEntity>();
+            try
+            {
+                using (var conn = new SqlConnection(cs))
+                {
+                    conn.Open();
+                    if (conn.State == System.Data.ConnectionState.Open)
+                    {
+                        using (SqlCommand cmd = conn.CreateCommand())
+                        {
+                            cmd.CommandText = GetProductsQuery;
+                            using (SqlDataReader reader = cmd.ExecuteReader())
+                            {
+                                while (reader.Read())
+                                {
+                                    var site = new DeviceBalanceLogEntity
+                                    {
+                                        ID = reader.GetInt64(0),
+                                        DeviceID = reader.GetInt32(1),                                        
+                                        LogValue = reader.GetDecimal(2)
+                                    };
+                                    sites.Add(site);
+                                }
+                            }
+                        }
+                        conn.Close();
+                    }
+                }
+                return sites;
+            }
+            catch (Exception eSql)
+            {
+                errorLog.SaveLog(eSql);
+                throw eSql;
+            }
+        }
+
+
+        public void UpdateDeviceChargeValueLog(long id)
+        {
+            try
+            {
+                var localip = Extension.LocalIPAddress;
+                if (string.IsNullOrWhiteSpace(localip)) return;
+                if (id <= 0) return;
+                string GetProductsQuery = string.Format(@" update [dbo].[DeviceBalanceLog] set IsDownload = 1 where ID = {0} ", id);
                 using (var conn = new SqlConnection(cs))
                 {
                     conn.Open();
