@@ -102,7 +102,6 @@
   <ItemGroup>
     <!-- A reference to the entire .Net Framework and Windows SDK are automatically included -->
     <None Include="Properties\ServiceReferences.Designer.ClientConfig" />
-    <None Include="thtcontroller.pfx" />
     <None Include="THTController_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
@@ -216,8 +215,8 @@
     <SDKReference Include="Microsoft.VCLibs.120, Version=14.0">
       <Name>Microsoft Visual C++ 2013 Runtime Package for Windows Universal</Name>
     </SDKReference>
-    <SDKReference Include="SQLite.UWP.2015, Version=3.35.4">
-      <Name>SQLite for Universal Windows Platform %28SQLite.UWP.2015, Version=3.35.4%29</Name>
+    <SDKReference Include="SQLite.UWP.2015, Version=3.35.5">
+      <Name>SQLite for Universal Windows Platform %28SQLite.UWP.2015, Version=3.35.5%29</Name>
     </SDKReference>
     <SDKReference Include="WindowsDesktop, Version=10.0.19041.0">
       <Name>Windows Desktop Extensions for the UWP</Name>
@@ -265,7 +264,8 @@
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
-    <AssemblyOriginatorKeyFile>thtcontroller.pfx</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>
+    </AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup>
     <DelaySign>false</DelaySign>
