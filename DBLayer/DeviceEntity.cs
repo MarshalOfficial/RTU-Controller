@@ -16,7 +16,8 @@ namespace SerialSample.DBLayer
         public string Y { get; set; }
         public string GoogleAddress { get; set; }
         public int RowNow { get; set; }
-        public int? ConnectedDeviceID { get; set; } 
+        public int? ConnectedDeviceID { get; set; }
+        public decimal? Balance { get; set; }
     }
 }
     
