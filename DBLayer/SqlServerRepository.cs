@@ -210,8 +210,8 @@ namespace SerialSample.DBLayer
                                                        isnull([ChildType],0),isnull(GPIO,0),isnull(GPIOValue,0),isnull([IEEE],0),isnull([UnitName],''),
                                                        isnull([MinValue],0),isnull([MaxValue],0),isnull([SecondFormula],''),isnull(ParentID,0),
                                                        isnull(FromByte,0),isnull(ToByte,0),isnull(IsEffectOnBalance,0),
-                                                       isnull(ConnectedDeviceIDPositive,0),isnull(ConnectedDeviceInstructionIDPositive,0),
-                                                       isnull(ConnectedDeviceIDNegative,0),isnull(ConnectedDeviceInstructionIDNegative,0)
+                                                       isnull(ConnectedDeviceInstructionIDPositive,0),
+                                                       isnull(ConnectedDeviceInstructionIDNegative,0)
                                                FROM [dbo].[Instructions](nolock) Where IsDeleted=0 ";
 
             var sites = new List<InstructionEntity>();
@@ -252,11 +252,9 @@ namespace SerialSample.DBLayer
                                         ParentID = reader.GetInt32(18),
                                         FromByte = reader.GetInt32(19),
                                         ToByte = reader.GetInt32(20),
-                                        IsEffectOnBalance = reader.GetBoolean(21),
-                                        ConnectedDeviceIDPositive = reader.GetInt32(22),
-                                        ConnectedDeviceInstructionIDPositive = reader.GetInt32(23),
-                                        ConnectedDeviceIDNegative = reader.GetInt32(24),
-                                        ConnectedDeviceInstructionIDNegative = reader.GetInt32(25)
+                                        IsEffectOnBalance = reader.GetBoolean(21),                                        
+                                        ConnectedDeviceInstructionIDPositive = reader.GetInt32(22),                                        
+                                        ConnectedDeviceInstructionIDNegative = reader.GetInt32(23)
                                     };
                                     sites.Add(site);
                                 }

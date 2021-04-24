@@ -1609,22 +1609,22 @@ namespace SerialSample
                             var oldbalance = dev.Balance.ToDecimal();
                             dev.Balance += (__value * -1);//مقدار دریافتی از کنتور از بالانس کم میشود
                             localDb.UpdateDevice(dev);
-                            if(oldbalance > 0 && dev.Balance <= 0 && ins.ConnectedDeviceIDNegative.ToInt() > 0 && ins.ConnectedDeviceInstructionIDNegative.ToInt() > 0)
+                            if(oldbalance > 0 && dev.Balance <= 0 && ins.ConnectedDeviceInstructionIDNegative.ToInt() > 0)
                             {
                                 //turn it off
                                 ShotQueue.Enqueue(new Shot(new LocalFireEntity()
                                 {
-                                    DeviceID = ins.ConnectedDeviceIDNegative.ToInt(),
+                                    DeviceID = dev.ID,
                                     InstructionID = ins.ConnectedDeviceInstructionIDNegative.ToInt(),
                                     Type = "LocalFire"
                                 }));
                             }
-                            if (oldbalance <= 0 && dev.Balance > 0 && ins.ConnectedDeviceIDPositive.ToInt() > 0 && ins.ConnectedDeviceInstructionIDPositive.ToInt() > 0)
+                            if (oldbalance <= 0 && dev.Balance > 0 && ins.ConnectedDeviceInstructionIDPositive.ToInt() > 0)
                             {
                                 //turn it on
                                 ShotQueue.Enqueue(new Shot(new LocalFireEntity()
                                 {
-                                    DeviceID = ins.ConnectedDeviceIDPositive.ToInt(),
+                                    DeviceID = dev.ID,
                                     InstructionID = ins.ConnectedDeviceInstructionIDPositive.ToInt(),
                                     Type = "LocalFire"
                                 }));

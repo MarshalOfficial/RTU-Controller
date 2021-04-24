@@ -33,10 +33,8 @@ namespace SerialSample.DBLayer
         public int? ParentID { get; set; }      
         public int? FromByte { get; set; }
         public int? ToByte { get; set; }
-        public bool IsEffectOnBalance { get; set; }
-        public int? ConnectedDeviceIDPositive { get; set; }
-        public int? ConnectedDeviceInstructionIDPositive { get; set; }
-        public int? ConnectedDeviceIDNegative { get; set; }
+        public bool IsEffectOnBalance { get; set; }        
+        public int? ConnectedDeviceInstructionIDPositive { get; set; }        
         public int? ConnectedDeviceInstructionIDNegative { get; set; }
     }
 }
