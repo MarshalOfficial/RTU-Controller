@@ -109,7 +109,7 @@ namespace THTController
                 {
                     List<string> IpAddress = new List<string>();
                     var Hosts = Windows.Networking.Connectivity.NetworkInformation.GetHostNames().ToList();
-                    foreach (var Host in Hosts)
+                    foreach (var Host in Hosts.Where(a => a.DisplayName.StartsWith("1") && a.DisplayName.Contains(".")))
                     {
                         string IP = Host.DisplayName;
                         IpAddress.Add(IP);
