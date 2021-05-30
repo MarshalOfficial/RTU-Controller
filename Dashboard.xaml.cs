@@ -343,7 +343,7 @@ namespace SerialSample
                     SaveTime = DateTime.Now
                 });
             }
-            
+
 
             if (GPIOPIN_13 == null)
             {
@@ -668,7 +668,7 @@ namespace SerialSample
             {
                 //ShowError(ex);
                 _errorLog.SaveLog(ex);
-                if(!ex.Message.ToLower().Contains("a task was canceled"))
+                if (!ex.Message.ToLower().Contains("a task was canceled"))
                 {
                     CoreApplication.Exit();
                 }
@@ -948,7 +948,7 @@ namespace SerialSample
                                     {
                                         ShotQueue.Dequeue();
                                     }
-                                    SLOCK = false;  
+                                    SLOCK = false;
                                     return;
                                 }
                             }
@@ -1118,14 +1118,13 @@ namespace SerialSample
                                                     catch (Exception ex)
                                                     {
                                                         fire.Value = string.Empty;
-                                                        _errorLog.SaveLog(ex,"خطا در پردازش فرمول");
+                                                        _errorLog.SaveLog(ex, "خطا در پردازش فرمول");
                                                     }
 
                                                 }
-                                                if (string.IsNullOrWhiteSpace(fire.Value))
+                                                if (!string.IsNullOrWhiteSpace(fire.Value))
                                                 {
-                                                    fire.Value = value;
-                                                    _value = fire.Value;
+                                                    _value = fire.Value.ToString();
                                                 }
                                                 if (Extension.IsSqlServerAvailable(LocalCache.Setting.SQLServerIP))
                                                 {
@@ -1285,10 +1284,9 @@ namespace SerialSample
 
                                                 }
 
-                                                if (string.IsNullOrWhiteSpace(dashitem.Value))
+                                                if (!string.IsNullOrWhiteSpace(dashitem.Value))
                                                 {
-                                                    dashitem.Value = value;
-                                                    _value = dashitem.Value;
+                                                    _value = dashitem.Value.ToString();
                                                 }
 
                                                 dashitem.SaveTime = DateTime.UtcNow;
@@ -1530,10 +1528,9 @@ namespace SerialSample
                                                     }
 
                                                 }
-                                                if (string.IsNullOrWhiteSpace(localfire.Value))
+                                                if (!string.IsNullOrWhiteSpace(localfire.Value))
                                                 {
-                                                    localfire.Value = value;
-                                                    _value = localfire.Value;
+                                                    _value = localfire.Value.ToString();
                                                 }
                                                 LocalCache.DashboardLogs.Add(new DashboardLogEntity()
                                                 {
@@ -1602,14 +1599,22 @@ namespace SerialSample
                         //todo check if instruction has effect on balance then update balance and make an instruction base on balance if less than zero or above
                         //همچنین ی جایی برای دانلود اتومات لاگ های مثبت شارژ کنتور باید بیندیشیم
                         //
-                        if (_deviceid > 0 && _instructionid > 0 && LocalCache.Instructions.FirstOrDefault(a => a.ID == _instructionid).IsEffectOnBalance && decimal.TryParse(_value, out decimal __value))
+                        decimal __value = 0;
+                        try
+                        {
+                            decimal.TryParse(_value, out __value);
+                        }
+                        catch { }
+
+                        if (_deviceid > 0 && _instructionid > 0 && LocalCache.Instructions.FirstOrDefault(a => a.ID == _instructionid).IsEffectOnBalance && __value >= 0)
                         {
                             var ins = LocalCache.Instructions.FirstOrDefault(a => a.ID == _instructionid);
                             var dev = LocalCache.Devices.FirstOrDefault(a => a.ID == _deviceid);
                             var oldbalance = dev.Balance.ToDecimal();
                             dev.Balance += (__value * -1);//مقدار دریافتی از کنتور از بالانس کم میشود
                             localDb.UpdateDevice(dev);
-                            if(oldbalance > 0 && dev.Balance <= 0 && ins.ConnectedDeviceInstructionIDNegative.ToInt() > 0)
+                            //if(oldbalance > 0 && dev.Balance <= 0 && ins.ConnectedDeviceInstructionIDNegative.ToInt() > 0)
+                            if (dev.Balance <= 0 && ins.ConnectedDeviceInstructionIDNegative.ToInt() > 0)
                             {
                                 //turn it off
                                 ShotQueue.Enqueue(new Shot(new LocalFireEntity()
@@ -1619,7 +1624,8 @@ namespace SerialSample
                                     Type = "LocalFire"
                                 }));
                             }
-                            if (oldbalance <= 0 && dev.Balance > 0 && ins.ConnectedDeviceInstructionIDPositive.ToInt() > 0)
+                            //if (oldbalance <= 0 && dev.Balance > 0 && ins.ConnectedDeviceInstructionIDPositive.ToInt() > 0)
+                            if (dev.Balance > 0 && ins.ConnectedDeviceInstructionIDPositive.ToInt() > 0)
                             {
                                 //turn it on
                                 ShotQueue.Enqueue(new Shot(new LocalFireEntity()
@@ -1636,7 +1642,7 @@ namespace SerialSample
             }
             catch (Exception ex)
             {
-                _errorLog.SaveLog(ex, ShotQueue.Count > 0 ? "Read*"+ InString + "*" + JsonConvert.SerializeObject(ShotQueue.Peek()) : "");
+                _errorLog.SaveLog(ex, ShotQueue.Count > 0 ? "Read*" + InString + "*" + JsonConvert.SerializeObject(ShotQueue.Peek()) : "");
                 throw ex;
             }
         }
@@ -1845,9 +1851,9 @@ namespace SerialSample
                         //ShotQueue.TrimExcess();
                         if (ShotQueue != null && ShotQueue.Count > 0)
                         {
-                            if(ShotQueue.Any(l=>l.InstructionFire !=null || l.LocalFire != null))
+                            if (ShotQueue.Any(l => l.InstructionFire != null || l.LocalFire != null))
                             {
-                                while(ShotQueue.Peek() != null && ShotQueue.Peek().DashboardItem != null)
+                                while (ShotQueue.Peek() != null && ShotQueue.Peek().DashboardItem != null)
                                 {
                                     ShotQueue.Dequeue();
                                 }
@@ -2002,12 +2008,12 @@ namespace SerialSample
                 SlockTimer.Stop();
                 if (ShotQueue != null && ShotQueue.Count > 0)
                 {
-                    var onlineshot = ShotQueue.Peek();                    
+                    var onlineshot = ShotQueue.Peek();
 
                     if (onlineshot.InstructionFire != null)
                     {
                         var fire = onlineshot.InstructionFire;
-                        fire.Value = "Timeout";                        
+                        fire.Value = "Timeout";
                         if (Extension.IsSqlServerAvailable(LocalCache.Setting.SQLServerIP))
                         {
                             sqlDb.UpdateInstructionFireOnServer(onlineshot.InstructionFire.ID, fire.Value, 0);
@@ -2015,7 +2021,7 @@ namespace SerialSample
                     }
                     else if (onlineshot.DashboardItem != null)
                     {
-                        var dash = LocalCache.DashboardItems.FirstOrDefault(l => l.ID == onlineshot.DashboardItem.ID);                        
+                        var dash = LocalCache.DashboardItems.FirstOrDefault(l => l.ID == onlineshot.DashboardItem.ID);
                         dash.Value = "Timeout";
                         dash.SaveTime = DateTime.UtcNow;
                         LocalCache.DashboardItems.Where(usr => usr.ID == dash.ID).Select(usr => { usr.ResultID = 0; usr.Value = dash.Value; usr.SaveTime = dash.SaveTime; return usr; }).ToList();
@@ -2031,7 +2037,7 @@ namespace SerialSample
                         });
                     }
                     else if (onlineshot.LocalFire != null)
-                    {                        
+                    {
                         LocalCache.DashboardLogs.Add(new DashboardLogEntity()
                         {
                             InstructionID = onlineshot.LocalFire.InstructionID,
@@ -2047,7 +2053,7 @@ namespace SerialSample
                             await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => { UpdateLocalFireResultUI("Timeout"); });
                         }
                     }
-                   
+
                     if (ShotQueue.Count > 0) { ShotQueue.Dequeue(); }
                     SLOCK = false;
                 }
@@ -2086,7 +2092,7 @@ namespace SerialSample
                                 if (lst != null && lst.Count > 0)
                                 {
                                     sqlDb.UploadDashboardLogsToServer(lst);
-                                    foreach(var lll in lst)
+                                    foreach (var lll in lst)
                                     {
                                         localDb.DeleteDashboardLog(lll.ID);
                                     }
@@ -2213,7 +2219,7 @@ namespace SerialSample
                                 content.Refresh(LocalCache);
                             }
                         });
-                        
+
                     }
                     Thread.Sleep(7000);
                 }
@@ -2228,7 +2234,7 @@ namespace SerialSample
 
 
         private void DownloadDeviceChargeLog()
-        {   
+        {
             try
             {
                 while (true)
@@ -2236,7 +2242,7 @@ namespace SerialSample
                     if (Extension.IsSqlServerAvailable(LocalCache.Setting.SQLServerIP))
                     {
                         var lst = sqlDb.DownloadDeviceChargeValue();
-                        if(lst != null && lst.Count > 0)
+                        if (lst != null && lst.Count > 0)
                         {
                             string deviceids = string.Join(",", lst.Select(item => item.DeviceID).Distinct().ToArray());
                             foreach (var devid in deviceids.Split(','))
@@ -2251,11 +2257,12 @@ namespace SerialSample
                                 sqlDb.UpdateDeviceChargeValueLog(item.ID);
                             }
                         }
-                        
+
                         Thread.Sleep(300000);//every 5 minutes
                     }
                 }
             }
+
             catch (Exception ex)
             {
                 ShowError(ex); _errorLog.SaveLog(ex);
