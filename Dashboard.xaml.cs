@@ -51,14 +51,14 @@ namespace SerialSample
         private const int GPIO_21 = 21;
         private const int GPIO_25 = 25;
         private const int GPIO_26 = 26;
-        private GpioPin GPIOPIN_12;
-        private GpioPin GPIOPIN_13;
-        private GpioPin GPIOPIN_16;
-        private GpioPin GPIOPIN_19;
-        private GpioPin GPIOPIN_20;
-        private GpioPin GPIOPIN_21;
-        private GpioPin GPIOPIN_25;
-        private GpioPin GPIOPIN_26;
+        private static GpioPin GPIOPIN_12;
+        private static GpioPin GPIOPIN_13;
+        private static GpioPin GPIOPIN_16;
+        private static GpioPin GPIOPIN_19;
+        private static GpioPin GPIOPIN_20;
+        private static GpioPin GPIOPIN_21;
+        private static GpioPin GPIOPIN_25;
+        private static GpioPin GPIOPIN_26;
         //private GpioPin redPin;
         //private GpioPin greenPin;
         /// <summary>
@@ -66,20 +66,20 @@ namespace SerialSample
         /// که از همین پورت سریال و ارتباط سریال برای ارتباط با دستگاه های سخت افزاری دیگر استفاده میکنیم
         /// عملا کامندهای هر دستگاه موجود در شبکه سریال رسپری را روی همین پورت ارسال میکنیم و جواب را هم از دستگاه روی همین پورت سریال میگیریم
         /// </summary>
-        private SerialDevice serialPort = null;
+        private static SerialDevice serialPort = null;
         /// <summary>
         /// آبجکت نوشتن روی پورت سریال
         /// </summary>
-        private DataWriter dataWriteObject = null;
+        private static DataWriter dataWriteObject = null;
         /// <summary>
         /// آبجکت خواندن از پورت سریال
         /// </summary>
-        private DataReader dataReaderObject = null;
+        private static DataReader dataReaderObject = null;
         /// <summary>
         /// لیست پورت های سریال موجود و آماده به کار دستگاه در این لیست نگهداری می شود
         /// که برای رسپری یک پورت فعال و اماده بکار وجود دارد
         /// </summary>
-        private ObservableCollection<DeviceInformation> listOfDevices;
+        private static ObservableCollection<DeviceInformation> listOfDevices;
         /// <summary>
         /// آبکت کنسل کردن ارتباط سریال حین خواندن
         /// </summary>
@@ -87,11 +87,11 @@ namespace SerialSample
         /// <summary>
         /// این چهار متغیر برای نگهداری ویژگی های پورت سریال می باشد اعم از بادریت و پریتی و ....
         /// </summary>
-        private string baudrate, parity, stopbits, databits;
+        private static string baudrate, parity, stopbits, databits;
         /// <summary>
         /// تایم اوت رید و رایت ارتباط سریال
         /// </summary>
-        private int readtimeout, writeout;
+        private static int readtimeout, writeout;
         /// <summary>
         /// این متغیر رشته ای برای نگهداری کامندی که میخاهیم روی پورت سریال بفرستیم می باشد
         /// </summary>
@@ -298,7 +298,7 @@ namespace SerialSample
             }
             catch (Exception ex)
             {
-                ShowError(ex); _errorLog.SaveLog(ex);
+                _errorLog.SaveLog(ex);
                 throw ex;
             }
         }
@@ -580,7 +580,7 @@ namespace SerialSample
             }
             catch (Exception ex)
             {
-                ShowError(ex); _errorLog.SaveLog(ex);
+                _errorLog.SaveLog(ex);
                 throw ex;
             }
         }
@@ -640,7 +640,7 @@ namespace SerialSample
             }
             catch (Exception ex)
             {
-                ShowError(ex); _errorLog.SaveLog(ex);
+                _errorLog.SaveLog(ex);
                 throw ex;
                 //status.Text = ex.Message;
                 //sendTextButton.IsEnabled = false;
@@ -713,8 +713,7 @@ namespace SerialSample
             }
             catch (Exception ex)
             {
-                ShowError(ex); _errorLog.SaveLog(ex);
-                throw ex;
+                _errorLog.SaveLog(ex);                
                 //status.Text = "sendTextButton_Click: " + ex.Message;
             }
             finally
@@ -777,8 +776,7 @@ namespace SerialSample
             }
             catch (Exception ex)
             {
-                ShowError(ex); _errorLog.SaveLog(ex);
-                throw ex;
+                _errorLog.SaveLog(ex);                
             }
         }
 
@@ -801,7 +799,7 @@ namespace SerialSample
         #endregion
 
         #region [DetachForm]
-        private void CloseFormProcess()
+        private void CloseFormProcess(bool clearlist = true)
         {
             //DateTimeThread.Abort();
             //ClockThread.Abort();
@@ -810,7 +808,7 @@ namespace SerialSample
             //DashboardThreads.ForEach(l => l.Abort()); 
             //UploadLogThread.Abort();
             CancelReadTask();
-            CloseDevice();
+            CloseDevice(clearlist);
             //greenPin.Dispose();
             //redPin.Dispose();
             GPIOPIN_12.Dispose();
@@ -832,8 +830,8 @@ namespace SerialSample
             }
             catch (Exception ex)
             {
-                //ShowError(ex);_errorLog.SaveLog(ex);
-                //throw ex;
+                _errorLog.SaveLog(ex);
+                throw ex;
             }
         }
         #endregion
@@ -1642,8 +1640,7 @@ namespace SerialSample
             }
             catch (Exception ex)
             {
-                _errorLog.SaveLog(ex, ShotQueue.Count > 0 ? "Read*" + InString + "*" + JsonConvert.SerializeObject(ShotQueue.Peek()) : "");
-                throw ex;
+                _errorLog.SaveLog(ex, ShotQueue.Count > 0 ? "Read*" + InString + "*" + JsonConvert.SerializeObject(ShotQueue.Peek()) : "");                
             }
         }
         #endregion
@@ -1659,14 +1656,17 @@ namespace SerialSample
                 }
             }
         }
-        private void CloseDevice()
+        private void CloseDevice(bool clearlist = true)
         {
             if (serialPort != null)
             {
                 serialPort.Dispose();
             }
             serialPort = null;
-            listOfDevices.Clear();
+            if(clearlist)
+            {
+                listOfDevices.Clear();
+            }            
         }
         #endregion
 
@@ -1687,8 +1687,7 @@ namespace SerialSample
             }
             catch (Exception ex)
             {
-                ShowError(ex); _errorLog.SaveLog(ex);
-                throw ex;
+                _errorLog.SaveLog(ex);                
             }
         }
         #endregion
@@ -1714,27 +1713,37 @@ namespace SerialSample
             {
                 while (true)
                 {
-                    if (Extension.IsSqlServerAvailable(LocalCache.Setting.SQLServerIP))
+                    try
                     {
-                        var date = sqlDb.GetServerTime();
-                        SYSTEMTIME st = new SYSTEMTIME
+                        if (Extension.IsSqlServerAvailable(LocalCache.Setting.SQLServerIP))
                         {
-                            wYear = short.Parse(date.Year.ToString()),
-                            wMonth = short.Parse(date.Month.ToString()),
-                            wDay = short.Parse(date.Day.ToString()),
-                            wHour = short.Parse(date.Hour.ToString()),
-                            wMinute = (short.Parse(date.Minute.ToString())),
-                            wSecond = short.Parse(date.Second.ToString())
-                        };
-                        SetSystemTime(ref st);
-                        Thread.Sleep(10800000);//every 3 hour
+                            var date = sqlDb.GetServerTime();
+                            SYSTEMTIME st = new SYSTEMTIME
+                            {
+                                wYear = short.Parse(date.Year.ToString()),
+                                wMonth = short.Parse(date.Month.ToString()),
+                                wDay = short.Parse(date.Day.ToString()),
+                                wHour = short.Parse(date.Hour.ToString()),
+                                wMinute = (short.Parse(date.Minute.ToString())),
+                                wSecond = short.Parse(date.Second.ToString())
+                            };
+                            SetSystemTime(ref st);
+                            Thread.Sleep(10800000);//every 3 hour
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        try
+                        {
+                            _errorLog.SaveLog(e);
+                        }
+                        catch { }
                     }
                 }
             }
             catch (Exception ex)
             {
-                ShowError(ex); _errorLog.SaveLog(ex);
-                throw ex;
+                _errorLog.SaveLog(ex);
             }
         }
         #endregion
@@ -1746,19 +1755,28 @@ namespace SerialSample
             {
                 while (true)
                 {
-                    if (serialPort != null)
+                    try
                     {
-                        await CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
-                        () => { lblDatetime.Text = Methods.GregorianToShamshiDateWithTime(DateTime.UtcNow); });//DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"); });
+                        if (serialPort != null)
+                        {
+                            await CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
+                            () => { lblDatetime.Text = Methods.GregorianToShamshiDateWithTime(DateTime.UtcNow); });//DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"); });
+                        }
+                        Thread.Sleep(1000);
                     }
-                    Thread.Sleep(1000);
+                    catch(Exception e)
+                    {
+                        try
+                        {
+                            _errorLog.SaveLog(e, "UpdateClock");
+                        }
+                        catch { }
+                    }
                 }
             }
             catch (Exception ex)
-            {
-                ShowError(ex);
-                _errorLog.SaveLog(ex, "UpdateClock");
-                throw ex;
+            {                
+                _errorLog.SaveLog(ex, "UpdateClock");                
             }
         }
         #endregion
@@ -1770,30 +1788,39 @@ namespace SerialSample
             {
                 while (true)
                 {
-                    if (serialPort != null && Extension.IsSqlServerAvailable(LocalCache.Setting.SQLServerIP))//  یعنی تنها وقتی پردازش جلو میره که فرم داشبورد روی صفحه باشه و سرور هم وصل باشه
+                    try
                     {
-                        var deviceids = LocalCache.GetAllDeviceIDs();
-                        if (deviceids != null && deviceids.Count() > 0)
+                        if (serialPort != null && Extension.IsSqlServerAvailable(LocalCache.Setting.SQLServerIP))//  یعنی تنها وقتی پردازش جلو میره که فرم داشبورد روی صفحه باشه و سرور هم وصل باشه
                         {
-                            var fires = sqlDb.DownloadAllInstructionFires(deviceids);
-                            //ShotQueue.Clear();
-                            foreach (var fire in fires)
+                            var deviceids = LocalCache.GetAllDeviceIDs();
+                            if (deviceids != null && deviceids.Count() > 0)
                             {
-                                if (!ShotQueue.Any(l => l.InstructionFire != null && l.InstructionFire.ID == fire.ID))
+                                var fires = sqlDb.DownloadAllInstructionFires(deviceids);
+                                //ShotQueue.Clear();
+                                foreach (var fire in fires)
                                 {
-                                    ShotQueue.Enqueue(new Shot(fire));
+                                    if (!ShotQueue.Any(l => l.InstructionFire != null && l.InstructionFire.ID == fire.ID))
+                                    {
+                                        ShotQueue.Enqueue(new Shot(fire));
+                                    }
                                 }
                             }
                         }
+                        Thread.Sleep(3000);
                     }
-                    Thread.Sleep(3000);
+                    catch (Exception e)
+                    {
+                        try
+                        {
+                            _errorLog.SaveLog(e, "CheckInstructionFire");
+                        }
+                        catch { }
+                    }
                 }
             }
             catch (Exception ex)
-            {
-                ShowError(ex);
-                _errorLog.SaveLog(ex, "CheckInstructionFire");
-                throw ex;
+            {                
+                _errorLog.SaveLog(ex, "CheckInstructionFire");                
             }
         }
         #endregion
@@ -1805,32 +1832,42 @@ namespace SerialSample
             {
                 while (true)
                 {
-                    if (serialPort != null)
+                    try
                     {
-                        var priority = LocalCache.DashboardPriorities.FirstOrDefault(l => l.Value == timeout);
-                        if (priority != null)
+                        if (serialPort != null)
                         {
-                            var dash = LocalCache.DashboardItems.Where(l => LocalCache.Devices.Where(k => k.LocationID == LocalCache.Setting.SiteID).Select(j => j.ID).ToList().Contains(l.DeviceID) && l.Priority == priority.ID);
-                            foreach (var item in dash)
+                            var priority = LocalCache.DashboardPriorities.FirstOrDefault(l => l.Value == timeout);
+                            if (priority != null)
                             {
-                                if (!ShotQueue.Any(l => l.DashboardItem != null && l.DashboardItem.ID == item.ID))
+                                var dash = LocalCache.DashboardItems.Where(l => LocalCache.Devices.Where(k => k.LocationID == LocalCache.Setting.SiteID).Select(j => j.ID).ToList().Contains(l.DeviceID) && l.Priority == priority.ID);
+                                foreach (var item in dash)
                                 {
-                                    ShotQueue.Enqueue(new Shot(item));
+                                    if (!ShotQueue.Any(l => l.DashboardItem != null && l.DashboardItem.ID == item.ID))
+                                    {
+                                        ShotQueue.Enqueue(new Shot(item));
+                                    }
+                                    //if (ShotQueue.Count == 0 || ShotQueue.Peek().DashboardItem.ID != item.ID)
+                                    //{
+                                    //ShotQueue.Enqueue(new Shot(item));
+                                    //}
                                 }
-                                //if (ShotQueue.Count == 0 || ShotQueue.Peek().DashboardItem.ID != item.ID)
-                                //{
-                                //ShotQueue.Enqueue(new Shot(item));
-                                //}
                             }
                         }
+                        Thread.Sleep((int)(timeout * (decimal)1000));
                     }
-                    Thread.Sleep((int)(timeout * (decimal)1000));
+                    catch(Exception e)
+                    {
+                        try
+                        {
+                            _errorLog.SaveLog(e);
+                        }
+                        catch { }
+                    }
                 }
             }
             catch (Exception ex)
             {
-                ShowError(ex); _errorLog.SaveLog(ex);
-                throw ex;
+                _errorLog.SaveLog(ex);                
             }
         }
         #endregion
@@ -1842,160 +1879,172 @@ namespace SerialSample
             {
                 while (true)
                 {
-                    while (SLOCK == true)
+                    try
                     {
-                        continue;
-                    }
-                    if (serialPort != null)
-                    {
-                        //ShotQueue.TrimExcess();
-                        if (ShotQueue != null && ShotQueue.Count > 0)
+                        while (SLOCK == true)
                         {
-                            if (ShotQueue.Any(l => l.InstructionFire != null || l.LocalFire != null))
+                            continue;
+                        }
+                        if (serialPort != null)
+                        {
+                            //ShotQueue.TrimExcess();
+                            if (ShotQueue != null && ShotQueue.Count > 0)
                             {
-                                while (ShotQueue.Peek() != null && ShotQueue.Peek().DashboardItem != null)
+                                if (ShotQueue.Any(l => l.InstructionFire != null || l.LocalFire != null))
                                 {
-                                    ShotQueue.Dequeue();
+                                    while (ShotQueue.Peek() != null && ShotQueue.Peek().DashboardItem != null)
+                                    {
+                                        ShotQueue.Dequeue();
+                                    }
                                 }
-                            }
-                            var item = ShotQueue.Peek();
-                            InstructionEntity instruction;
-                            DeviceEntity device;
-                            if (item.InstructionFire != null)
-                            {
-                                instruction = LocalCache.Instructions.FirstOrDefault(l => l.ID == item.InstructionFire.InstructionID);
-                                device = LocalCache.Devices.FirstOrDefault(l => l.ID == item.InstructionFire.DeviceID);
-                            }
-                            else if (item.DashboardItem != null)
-                            {
-                                instruction = LocalCache.Instructions.FirstOrDefault(l => l.ID == item.DashboardItem.InstructionID);
-                                device = LocalCache.Devices.FirstOrDefault(l => l.ID == item.DashboardItem.DeviceID);
-                            }
-                            else
-                            {// local fire
-                                instruction = LocalCache.Instructions.FirstOrDefault(l => l.ID == item.LocalFire.InstructionID);
-                                device = LocalCache.Devices.FirstOrDefault(l => l.ID == item.LocalFire.DeviceID);
-                            }
+                                var item = ShotQueue.Peek();
+                                InstructionEntity instruction;
+                                DeviceEntity device;
+                                if (item.InstructionFire != null)
+                                {
+                                    instruction = LocalCache.Instructions.FirstOrDefault(l => l.ID == item.InstructionFire.InstructionID);
+                                    device = LocalCache.Devices.FirstOrDefault(l => l.ID == item.InstructionFire.DeviceID);
+                                }
+                                else if (item.DashboardItem != null)
+                                {
+                                    instruction = LocalCache.Instructions.FirstOrDefault(l => l.ID == item.DashboardItem.InstructionID);
+                                    device = LocalCache.Devices.FirstOrDefault(l => l.ID == item.DashboardItem.DeviceID);
+                                }
+                                else
+                                {// local fire
+                                    instruction = LocalCache.Instructions.FirstOrDefault(l => l.ID == item.LocalFire.InstructionID);
+                                    device = LocalCache.Devices.FirstOrDefault(l => l.ID == item.LocalFire.DeviceID);
+                                }
 
-                            if (instruction != null && instruction.GPIO > 0)
-                            {
-                                SlockTimer = new System.Timers.Timer(5000);
-                                SlockTimer.Elapsed += (sender, e) => HandleTimer();
-                                SlockTimer.Start();
-                                switch (instruction.GPIO)
+                                if (instruction != null && instruction.GPIO > 0)
                                 {
-                                    case 12:
-                                        GPIOPIN_12.Write(instruction.GPIOValue == 1
-                                            ? GpioPinValue.High
-                                            : GpioPinValue.Low);
-                                        localDb.InsertOrUpdateGPIOHistory(new GPIOHistoryEntity()
-                                        {
-                                            GPIO = 12,
-                                            GPIOValue = instruction.GPIOValue.Value,
-                                            SaveTime = DateTime.Now
-                                        });
-                                        break;
-                                    case 13:
-                                        GPIOPIN_13.Write(instruction.GPIOValue == 1
-                                            ? GpioPinValue.High
-                                            : GpioPinValue.Low);
-                                        localDb.InsertOrUpdateGPIOHistory(new GPIOHistoryEntity()
-                                        {
-                                            GPIO = 13,
-                                            GPIOValue = instruction.GPIOValue.Value,
-                                            SaveTime = DateTime.Now
-                                        });
-                                        break;
-                                    case 16:
-                                        GPIOPIN_16.Write(instruction.GPIOValue == 1
-                                            ? GpioPinValue.High
-                                            : GpioPinValue.Low);
-                                        localDb.InsertOrUpdateGPIOHistory(new GPIOHistoryEntity()
-                                        {
-                                            GPIO = 16,
-                                            GPIOValue = instruction.GPIOValue.Value,
-                                            SaveTime = DateTime.Now
-                                        });
-                                        break;
-                                    case 19:
-                                        GPIOPIN_19.Write(instruction.GPIOValue == 1
-                                            ? GpioPinValue.High
-                                            : GpioPinValue.Low);
-                                        localDb.InsertOrUpdateGPIOHistory(new GPIOHistoryEntity()
-                                        {
-                                            GPIO = 19,
-                                            GPIOValue = instruction.GPIOValue.Value,
-                                            SaveTime = DateTime.Now
-                                        });
-                                        break;
-                                    case 20:
-                                        GPIOPIN_20.Write(instruction.GPIOValue == 1
-                                            ? GpioPinValue.High
-                                            : GpioPinValue.Low);
-                                        localDb.InsertOrUpdateGPIOHistory(new GPIOHistoryEntity()
-                                        {
-                                            GPIO = 20,
-                                            GPIOValue = instruction.GPIOValue.Value,
-                                            SaveTime = DateTime.Now
-                                        });
-                                        break;
-                                    case 21:
-                                        GPIOPIN_21.Write(instruction.GPIOValue == 1
-                                            ? GpioPinValue.High
-                                            : GpioPinValue.Low);
-                                        localDb.InsertOrUpdateGPIOHistory(new GPIOHistoryEntity()
-                                        {
-                                            GPIO = 21,
-                                            GPIOValue = instruction.GPIOValue.Value,
-                                            SaveTime = DateTime.Now
-                                        });
-                                        break;
-                                    case 25:
-                                        GPIOPIN_25.Write(instruction.GPIOValue == 1
-                                            ? GpioPinValue.High
-                                            : GpioPinValue.Low);
-                                        localDb.InsertOrUpdateGPIOHistory(new GPIOHistoryEntity()
-                                        {
-                                            GPIO = 25,
-                                            GPIOValue = instruction.GPIOValue.Value,
-                                            SaveTime = DateTime.Now
-                                        });
-                                        break;
-                                    case 26:
-                                        GPIOPIN_26.Write(instruction.GPIOValue == 1
-                                            ? GpioPinValue.High
-                                            : GpioPinValue.Low);
-                                        localDb.InsertOrUpdateGPIOHistory(new GPIOHistoryEntity()
-                                        {
-                                            GPIO = 26,
-                                            GPIOValue = instruction.GPIOValue.Value,
-                                            SaveTime = DateTime.Now
-                                        });
-                                        break;
+                                    SlockTimer = new System.Timers.Timer(5000);
+                                    SlockTimer.Elapsed += (sender, e) => HandleTimer();
+                                    SlockTimer.Start();
+                                    switch (instruction.GPIO)
+                                    {
+                                        case 12:
+                                            GPIOPIN_12.Write(instruction.GPIOValue == 1
+                                                ? GpioPinValue.High
+                                                : GpioPinValue.Low);
+                                            localDb.InsertOrUpdateGPIOHistory(new GPIOHistoryEntity()
+                                            {
+                                                GPIO = 12,
+                                                GPIOValue = instruction.GPIOValue.Value,
+                                                SaveTime = DateTime.Now
+                                            });
+                                            break;
+                                        case 13:
+                                            GPIOPIN_13.Write(instruction.GPIOValue == 1
+                                                ? GpioPinValue.High
+                                                : GpioPinValue.Low);
+                                            localDb.InsertOrUpdateGPIOHistory(new GPIOHistoryEntity()
+                                            {
+                                                GPIO = 13,
+                                                GPIOValue = instruction.GPIOValue.Value,
+                                                SaveTime = DateTime.Now
+                                            });
+                                            break;
+                                        case 16:
+                                            GPIOPIN_16.Write(instruction.GPIOValue == 1
+                                                ? GpioPinValue.High
+                                                : GpioPinValue.Low);
+                                            localDb.InsertOrUpdateGPIOHistory(new GPIOHistoryEntity()
+                                            {
+                                                GPIO = 16,
+                                                GPIOValue = instruction.GPIOValue.Value,
+                                                SaveTime = DateTime.Now
+                                            });
+                                            break;
+                                        case 19:
+                                            GPIOPIN_19.Write(instruction.GPIOValue == 1
+                                                ? GpioPinValue.High
+                                                : GpioPinValue.Low);
+                                            localDb.InsertOrUpdateGPIOHistory(new GPIOHistoryEntity()
+                                            {
+                                                GPIO = 19,
+                                                GPIOValue = instruction.GPIOValue.Value,
+                                                SaveTime = DateTime.Now
+                                            });
+                                            break;
+                                        case 20:
+                                            GPIOPIN_20.Write(instruction.GPIOValue == 1
+                                                ? GpioPinValue.High
+                                                : GpioPinValue.Low);
+                                            localDb.InsertOrUpdateGPIOHistory(new GPIOHistoryEntity()
+                                            {
+                                                GPIO = 20,
+                                                GPIOValue = instruction.GPIOValue.Value,
+                                                SaveTime = DateTime.Now
+                                            });
+                                            break;
+                                        case 21:
+                                            GPIOPIN_21.Write(instruction.GPIOValue == 1
+                                                ? GpioPinValue.High
+                                                : GpioPinValue.Low);
+                                            localDb.InsertOrUpdateGPIOHistory(new GPIOHistoryEntity()
+                                            {
+                                                GPIO = 21,
+                                                GPIOValue = instruction.GPIOValue.Value,
+                                                SaveTime = DateTime.Now
+                                            });
+                                            break;
+                                        case 25:
+                                            GPIOPIN_25.Write(instruction.GPIOValue == 1
+                                                ? GpioPinValue.High
+                                                : GpioPinValue.Low);
+                                            localDb.InsertOrUpdateGPIOHistory(new GPIOHistoryEntity()
+                                            {
+                                                GPIO = 25,
+                                                GPIOValue = instruction.GPIOValue.Value,
+                                                SaveTime = DateTime.Now
+                                            });
+                                            break;
+                                        case 26:
+                                            GPIOPIN_26.Write(instruction.GPIOValue == 1
+                                                ? GpioPinValue.High
+                                                : GpioPinValue.Low);
+                                            localDb.InsertOrUpdateGPIOHistory(new GPIOHistoryEntity()
+                                            {
+                                                GPIO = 26,
+                                                GPIOValue = instruction.GPIOValue.Value,
+                                                SaveTime = DateTime.Now
+                                            });
+                                            break;
+                                    }
                                 }
-                            }
-                            else
-                            {
-                                var strtofire = device.RowNow + "-" + instruction.FunctionCode + "-" + instruction.Data;
-                                var crc = Extension.ComputeCRC(strtofire.ToByteList());
-                                strtofire += "-" + crc.CRC1.ToString() + "-" + crc.CRC2.ToString();
-                                SLOCK = true;
-                                OutString = strtofire;
-                                SlockTimer = new System.Timers.Timer(5000);
-                                SlockTimer.Elapsed += (sender, e) => HandleTimer();
-                                SlockTimer.Start();
-                                sendTextButton_Click(null, null);
+                                else
+                                {
+                                    var strtofire = device.RowNow + "-" + instruction.FunctionCode + "-" + instruction.Data;
+                                    var crc = Extension.ComputeCRC(strtofire.ToByteList());
+                                    strtofire += "-" + crc.CRC1.ToString() + "-" + crc.CRC2.ToString();
+                                    SLOCK = true;
+                                    OutString = strtofire;
+                                    SlockTimer = new System.Timers.Timer(5000);
+                                    SlockTimer.Elapsed += (sender, e) => HandleTimer();
+                                    SlockTimer.Start();
+                                    sendTextButton_Click(null, null);
+                                }
                             }
                         }
+                        Thread.Sleep(1);
                     }
-                    Thread.Sleep(1);
+                    catch(Exception ex)
+                    {
+                        try
+                        {
+                            _errorLog.SaveLog(ex, ShotQueue.Count > 0 ? "Send*" + JsonConvert.SerializeObject(ShotQueue.Peek()) : "");
+                        }
+                        catch
+                        {
+                        }
+                        ShotQueue.Dequeue();
+                    }
                 }
             }
             catch (Exception ex)
-            {
-                ShowError(ex);
+            {                
                 _errorLog.SaveLog(ex, ShotQueue.Count > 0 ? "Send*" + JsonConvert.SerializeObject(ShotQueue.Peek()) : "");
-                throw ex;
             }
         }
         #endregion
@@ -2073,55 +2122,68 @@ namespace SerialSample
             {
                 while (true)
                 {
-                    await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => { lblIpAddresss.Text = (string.IsNullOrWhiteSpace(lblIpAddresss.Text) ? Extension.LocalIPAddress : lblIpAddresss.Text); });
-                    await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => { ImgConnection.Source = (Extension.IsSqlServerAvailable(LocalCache.Setting.SQLServerIP) ? new BitmapImage(new Uri("ms-appx:/Assets/connect.png", UriKind.Absolute)) : new BitmapImage(new Uri("ms-appx:/Assets/disconnect.png", UriKind.Absolute))); });
-                    if (serialPort != null)
+                    try
                     {
-                        var localcachelog = new List<DashboardLogEntity>(LocalCache.DashboardLogs);
-                        LocalCache.DashboardLogs.Clear();
-                        foreach (var log in localcachelog)
+                        await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => { lblIpAddresss.Text = (string.IsNullOrWhiteSpace(lblIpAddresss.Text) ? Extension.LocalIPAddress : lblIpAddresss.Text); });
+                        await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => { ImgConnection.Source = (Extension.IsSqlServerAvailable(LocalCache.Setting.SQLServerIP) ? new BitmapImage(new Uri("ms-appx:/Assets/connect.png", UriKind.Absolute)) : new BitmapImage(new Uri("ms-appx:/Assets/disconnect.png", UriKind.Absolute))); });
+                        if (serialPort != null)
                         {
-                            localDb.InsertDashboardLogAsync(log);
-                        }
-                        if (Extension.IsSqlServerAvailable(LocalCache.Setting.SQLServerIP) && SendLock == false)
-                        {
-                            try
+                            var localcachelog = new List<DashboardLogEntity>(LocalCache.DashboardLogs);
+                            LocalCache.DashboardLogs.Clear();
+                            foreach (var log in localcachelog)
                             {
-                                SendLock = true;
-                                var lst = await localDb.GetAllDashboardLog();//select top 1000
-                                if (lst != null && lst.Count > 0)
+                                localDb.InsertDashboardLogAsync(log);
+                            }
+                            if (Extension.IsSqlServerAvailable(LocalCache.Setting.SQLServerIP) && SendLock == false)
+                            {
+                                try
                                 {
-                                    sqlDb.UploadDashboardLogsToServer(lst);
-                                    foreach (var lll in lst)
+                                    SendLock = true;
+                                    var lst = await localDb.GetAllDashboardLog();//select top 1000
+                                    if (lst != null && lst.Count > 0)
                                     {
-                                        localDb.DeleteDashboardLog(lll.ID);
+                                        sqlDb.UploadDashboardLogsToServer(lst);
+                                        foreach (var lll in lst)
+                                        {
+                                            localDb.DeleteDashboardLog(lll.ID);
+                                        }
+                                        //localDb.DeleteAllDashboardLog();
                                     }
-                                    //localDb.DeleteAllDashboardLog();
+                                    if (sqlDb.CheckForHardUpdate(LocalCache.Setting.SiteID))
+                                    {
+                                        DTS.Init(LocalCache.Setting.SQLServerIP);
+                                        if (DTS.FullDownload()) { sqlDb.UpdateRasHardUpdateStatus(LocalCache.Setting.SiteID); CoreApplication.Exit(); };
+                                    }
                                 }
-                                if (sqlDb.CheckForHardUpdate(LocalCache.Setting.SiteID))
+                                catch (Exception ex)
                                 {
-                                    DTS.Init(LocalCache.Setting.SQLServerIP);
-                                    if (DTS.FullDownload()) { sqlDb.UpdateRasHardUpdateStatus(LocalCache.Setting.SiteID); CoreApplication.Exit(); };
+                                    _errorLog.SaveLog(ex, "UploadDashboardLogsToServer");
                                 }
-                            }
-                            catch (Exception ex)
-                            {
-                                _errorLog.SaveLog(ex, "UploadDashboardLogsToServer");
-                            }
-                            finally
-                            {
-                                SendLock = false;
-                            }
+                                finally
+                                {
+                                    SendLock = false;
+                                }
 
+                            }
                         }
                     }
-                    Thread.Sleep(5000);
+                    catch (Exception e)
+                    {
+                        try
+                        {
+                            _errorLog.SaveLog(e);
+                        }
+                        catch { }
+                    }
+                    finally
+                    {
+                        Thread.Sleep(5000);
+                    }
                 }
             }
             catch (Exception ex)
             {
-                ShowError(ex); _errorLog.SaveLog(ex);
-                throw ex;
+                _errorLog.SaveLog(ex);
             }
         }
         #endregion
@@ -2210,24 +2272,37 @@ namespace SerialSample
             {
                 while (true)
                 {
-                    if (serialPort != null)
+                    try
                     {
-                        await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => {
-                            var pivot = (PivotItem)pivotMain.SelectedItem;
-                            if (pivot != null && pivot.Content is DashContent content)
-                            {
-                                content.Refresh(LocalCache);
-                            }
-                        });
+                        if (serialPort != null)
+                        {
+                            await Windows.ApplicationModel.Core.CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => {
+                                var pivot = (PivotItem)pivotMain.SelectedItem;
+                                if (pivot != null && pivot.Content is DashContent content)
+                                {
+                                    content.Refresh(LocalCache);
+                                }
+                            });
 
+                        }
                     }
-                    Thread.Sleep(7000);
+                    catch(Exception e)
+                    {
+                        try
+                        {
+                            _errorLog.SaveLog(e);
+                        }
+                        catch { }
+                    }
+                    finally
+                    {
+                        Thread.Sleep(7000);
+                    }                    
                 }
             }
             catch (Exception ex)
             {
-                _errorLog.SaveLog(ex);
-                throw ex;
+                _errorLog.SaveLog(ex);                
             }
         }
         #endregion
@@ -2239,45 +2314,45 @@ namespace SerialSample
             {
                 while (true)
                 {
-                    if (Extension.IsSqlServerAvailable(LocalCache.Setting.SQLServerIP))
+                    try
                     {
-                        var lst = sqlDb.DownloadDeviceChargeValue();
-                        if (lst != null && lst.Count > 0)
+                        if (Extension.IsSqlServerAvailable(LocalCache.Setting.SQLServerIP))
                         {
-                            string deviceids = string.Join(",", lst.Select(item => item.DeviceID).Distinct().ToArray());
-                            foreach (var devid in deviceids.Split(','))
+                            var lst = sqlDb.DownloadDeviceChargeValue();
+                            if (lst != null && lst.Count > 0)
                             {
-                                var charge = lst.Where(a => a.DeviceID == devid.ToInt()).Sum(a => a.LogValue);
-                                var dev = LocalCache.Devices.FirstOrDefault(a => a.ID == devid.ToInt());
-                                dev.Balance += charge;
-                                localDb.UpdateDevice(dev);
+                                string deviceids = string.Join(",", lst.Select(item => item.DeviceID).Distinct().ToArray());
+                                foreach (var devid in deviceids.Split(','))
+                                {
+                                    var charge = lst.Where(a => a.DeviceID == devid.ToInt()).Sum(a => a.LogValue);
+                                    var dev = LocalCache.Devices.FirstOrDefault(a => a.ID == devid.ToInt());
+                                    dev.Balance += charge;
+                                    localDb.UpdateDevice(dev);
+                                }
+                                foreach (var item in lst)
+                                {
+                                    sqlDb.UpdateDeviceChargeValueLog(item.ID);
+                                }
                             }
-                            foreach (var item in lst)
-                            {
-                                sqlDb.UpdateDeviceChargeValueLog(item.ID);
-                            }
+                            Thread.Sleep(300000);//every 5 minutes
                         }
-
-                        Thread.Sleep(300000);//every 5 minutes
+                    }
+                    catch (Exception e)
+                    {
+                        try
+                        {
+                            _errorLog.SaveLog(e);
+                        }
+                        catch { }
                     }
                 }
             }
 
             catch (Exception ex)
             {
-                ShowError(ex); _errorLog.SaveLog(ex);
-                throw ex;
+                _errorLog.SaveLog(ex);
             }
-        }
-
-        private async void ShowError(Exception ex)
-        {
-            var Error = ex.Message + "#" + (ex.InnerException?.Message ?? "") + "#" + (ex.InnerException?.InnerException?.Message ?? "");
-            var stacktrace = ex.StackTrace + "#" + (ex.InnerException?.StackTrace ?? "") + "#" + (ex.InnerException?.InnerException?.StackTrace ?? "");
-            var dialog = new MessageDialog(Error + Environment.NewLine + stacktrace);
-            dialog.Title = "خطای ثبت تنظیمات";
-            await dialog.ShowAsync();
-        }
+        }                        
     }
 }
 //sample send data
