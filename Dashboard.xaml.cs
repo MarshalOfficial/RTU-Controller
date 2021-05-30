@@ -1606,7 +1606,7 @@ namespace SerialSample
                         }
                         catch { }
 
-                        if (_deviceid > 0 && _instructionid > 0 && LocalCache.Instructions.FirstOrDefault(a => a.ID == _instructionid).IsEffectOnBalance && __value >= 0)
+                        if (_deviceid > 0 && _instructionid > 0 && LocalCache.Instructions.FirstOrDefault(a => a.ID == _instructionid).IsEffectOnBalance && __value > 0)
                         {
                             var ins = LocalCache.Instructions.FirstOrDefault(a => a.ID == _instructionid);
                             var dev = LocalCache.Devices.FirstOrDefault(a => a.ID == _deviceid);
